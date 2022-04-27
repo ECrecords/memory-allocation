@@ -1,3 +1,11 @@
+/*
+Elvis Chino-Islas
+Started: April 27
+Finished April 27
+COMP 322
+*/
+
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -18,7 +26,9 @@ void print(MEM_BLOC **list);
 
 void ff_alloc(MEM_BLOC **list, int* rem_mem);
 
-void bf_alloc(MEM_BLOC **list, int *rem_mem);
+void bf_alloc(MEM_BLOC **list, int *rem_mem, int *max_mem);
+
+void defrag(MEM_BLOC **list, int *rem_mem);
 
 void dealloc(MEM_BLOC **list, int *rem_mem);
 
@@ -26,6 +36,8 @@ int main(){
     int option;
 
     int rem_mem = 0;
+    int max_mem = 0;
+
     MEM_BLOC* list = NULL;
 
     printf("Memory Allocation\n"
@@ -45,29 +57,27 @@ int main(){
         if (option == 1)
         {
             init_mem(&list, &rem_mem);
-            printf("\nRemaining Memory: %d", rem_mem);
+            max_mem = rem_mem;
         }
         else if (option == 2)
         {
             ff_alloc(&list, &rem_mem);
             print(&list);
-            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 3)
         {
-            bf_alloc(&list, &rem_mem);
+            bf_alloc(&list, &rem_mem, &max_mem);
             print(&list);
-            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 4)
         {
             dealloc(&list, &rem_mem);
             print(&list);
-            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 5)
         {
-            /* code */
+            defrag(&list, &rem_mem);
+            print(&list);
         }
         else if (option == 6)
         {
@@ -94,7 +104,7 @@ void init_mem(MEM_BLOC **list, int *rem_mem){
 
     dummy->id = -1;
     dummy->start_addr = 0;
-    dummy->end_addr = -1;
+    dummy->end_addr = 0;
     dummy->next = NULL;
 
     *list = dummy;
@@ -141,7 +151,7 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     if ((*list)->next == NULL) {
         
         bloc->start_addr = 0;
-        bloc->end_addr = bloc->start_addr + (size-1);
+        bloc->end_addr = bloc->start_addr + (size);
         bloc->next = NULL;
         *rem_mem -= size;
         (*list)->next = bloc;
@@ -158,8 +168,8 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
         }
 
         if (curr->next == NULL){
-            bloc->start_addr = curr->end_addr+1;
-            bloc->end_addr = bloc->start_addr + size-1;
+            bloc->start_addr = curr->end_addr;
+            bloc->end_addr = bloc->start_addr + size;
             bloc->next = NULL;
             curr->next = bloc;
             *rem_mem -= size;
@@ -167,8 +177,8 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
         }
 
         if ( ((curr->next)->start_addr - curr->end_addr) >= size){
-            bloc->start_addr = curr->end_addr + 1;
-            bloc->end_addr = bloc->start_addr + (size-1);
+            bloc->start_addr = curr->end_addr;
+            bloc->end_addr = bloc->start_addr + (size);
             bloc->next = curr->next;
             curr->next = bloc;
             *rem_mem -= size;
@@ -180,7 +190,7 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     printf("No gitting hold found");
 }
 
-void bf_alloc(MEM_BLOC **list, int *rem_mem){
+void bf_alloc(MEM_BLOC **list, int *rem_mem, int *max_mem){
     MEM_BLOC *bloc;
     MEM_BLOC *prev;
     MEM_BLOC *curr;
@@ -217,7 +227,7 @@ void bf_alloc(MEM_BLOC **list, int *rem_mem){
     if ((*list)->next == NULL)
     {
         bloc->start_addr = 0;
-        bloc->end_addr = bloc->end_addr + (size-1);
+        bloc->end_addr = bloc->end_addr + (size);
         (*list)->next = bloc;
         *rem_mem -= size;
         return;
@@ -255,14 +265,26 @@ void bf_alloc(MEM_BLOC **list, int *rem_mem){
             bf = cmp;
         }
 
-        if (curr->next == NULL & flag == 1)
+        if ( curr->next == NULL && flag == 1)
         {
-            bloc->start_addr = curr->end_addr+1;
-            bloc->end_addr = bloc->start_addr + size-1;
+            bloc->start_addr = curr->end_addr;
+            bloc->end_addr = bloc->start_addr + size;
             bloc->next = NULL;
             curr->next = bloc;
             *rem_mem -= size;
             return;
+        }
+
+        if (curr->next == NULL && flag == 0){
+            if( (*max_mem - curr->end_addr) <= size){
+                bloc->start_addr = curr->end_addr;
+                bloc-> end_addr = *max_mem;
+                bloc->next = NULL;
+                curr->next = bloc;
+
+                *rem_mem -= size;
+                return;
+            }
         }
         
         
@@ -270,21 +292,39 @@ void bf_alloc(MEM_BLOC **list, int *rem_mem){
         prev = prev->next;
     }
     
+
     if (!flag)
     {
-        bloc->start_addr = bf_prev->end_addr + 1;
-        bloc->end_addr = bloc->start_addr + (size-1);
-        prev->next = bloc;
-        bloc->next = curr;
+
+        bloc->start_addr = bf_prev->end_addr ;
+        bloc->end_addr = bf->start_addr;
+        bf_prev->next = bloc;
+        bloc->next = bf;
         *rem_mem -= size;
         return;
     }
 
-    printf("\nNo hole found");
-    
-    
+    printf("\nNo hole found"); 
     
 }
+
+void defrag(MEM_BLOC **list, int *rem_mem){
+    int size;
+    MEM_BLOC *curr = (*list);
+    
+    while (curr->next != NULL)
+    {
+        if (((curr->next)->start_addr - curr->end_addr) > 0)
+        {
+            size = curr->next->end_addr -curr->next->start_addr;
+            curr->next->start_addr = curr->end_addr;
+            curr->next->end_addr = curr->next->start_addr + size;
+        }
+
+        curr = curr->next;
+    }    
+}
+
 
 void dealloc(MEM_BLOC **list, int *rem_mem){
     int target;
@@ -308,7 +348,7 @@ void dealloc(MEM_BLOC **list, int *rem_mem){
         return;
     }
 
-    *rem_mem += (curr->end_addr-curr->start_addr) + 1;
+    *rem_mem += (curr->end_addr-curr->start_addr);
     prev->next = curr->next;
     free(curr);
 }
