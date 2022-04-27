@@ -18,6 +18,8 @@ void print(MEM_BLOC **list);
 
 void ff_alloc(MEM_BLOC **list, int* rem_mem);
 
+void bf_alloc(MEM_BLOC **list, int *rem_mem);
+
 void dealloc(MEM_BLOC **list, int *rem_mem);
 
 int main(){
@@ -43,20 +45,25 @@ int main(){
         if (option == 1)
         {
             init_mem(&list, &rem_mem);
+            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 2)
         {
             ff_alloc(&list, &rem_mem);
             print(&list);
+            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 3)
         {
-            /* code */
+            bf_alloc(&list, &rem_mem);
+            print(&list);
+            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 4)
         {
             dealloc(&list, &rem_mem);
             print(&list);
+            printf("\nRemaining Memory: %d", rem_mem);
         }
         else if (option == 5)
         {
@@ -64,6 +71,12 @@ int main(){
         }
         else if (option == 6)
         {
+            printf("\nQuitting Program...\n");
+            if (list != NULL){
+                printf("Freeing memory...\n");
+                free(list);
+            }
+                
             return 0;
         } 
     }
@@ -74,7 +87,7 @@ int main(){
 void init_mem(MEM_BLOC **list, int *rem_mem){
     MEM_BLOC *dummy;
 
-    printf("Enter size of physical memory: ");
+    printf("\nEnter size of physical memory: ");
     scanf("%d", rem_mem);
     
     dummy = (MEM_BLOC*) malloc( sizeof(MEM_BLOC) );
@@ -111,10 +124,10 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     int id;
     int size;
 
-    printf("Enter block id: ");
+    printf("\nEnter block id: ");
     scanf("%d", &(id));
     
-    printf("Enter block size:");
+    printf("\nEnter block size: ");
     scanf("%d", &size);
 
     if (size > *rem_mem) {
@@ -167,12 +180,16 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     printf("No gitting hold found");
 }
 
+void bf_alloc(MEM_BLOC **list, int *rem_mem){
+
+}
+
 void dealloc(MEM_BLOC **list, int *rem_mem){
     int target;
     MEM_BLOC *prev;
     MEM_BLOC *curr;
 
-    printf("Enter block id: ");
+    printf("\nEnter block id: ");
     scanf("%d", &target);
 
     prev = (*list);
@@ -189,7 +206,7 @@ void dealloc(MEM_BLOC **list, int *rem_mem){
         return;
     }
 
-    *rem_mem -= (curr->end_addr-curr->start_addr);
+    *rem_mem += (curr->end_addr-curr->start_addr) + 1;
     prev->next = curr->next;
     free(curr);
 }
