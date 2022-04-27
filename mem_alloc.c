@@ -125,7 +125,7 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     int size;
 
     printf("\nEnter block id: ");
-    scanf("%d", &(id));
+    scanf("%d", &id);
     
     printf("\nEnter block size: ");
     scanf("%d", &size);
@@ -152,7 +152,7 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
 
     while (curr != NULL)
     {
-        if ( (*list)->id == bloc->id){
+        if ( curr->id == id){
             printf("Duplicate id found\n");
             return;
         }
@@ -181,7 +181,109 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
 }
 
 void bf_alloc(MEM_BLOC **list, int *rem_mem){
+    MEM_BLOC *bloc;
+    MEM_BLOC *prev;
+    MEM_BLOC *curr;
 
+    MEM_BLOC *bf;
+    MEM_BLOC *bf_prev;
+
+    MEM_BLOC *cmp;
+    MEM_BLOC *cmp_prev;
+
+    int id;
+    int size;
+
+    int flag = 1;
+
+    int bf_size;
+    int cmp_size;
+    
+    printf("\nEnter block id: ");
+    scanf("%d", &id);
+
+    printf("\nEnter block size: ");
+    scanf("%d", &size);
+
+    if (size > *rem_mem)
+    {
+        printf("\nNo memory left\n");
+        return;
+    }
+
+    bloc = (MEM_BLOC*) malloc(sizeof(MEM_BLOC));
+    bloc->id = id;
+
+    if ((*list)->next == NULL)
+    {
+        bloc->start_addr = 0;
+        bloc->end_addr = bloc->end_addr + (size-1);
+        (*list)->next = bloc;
+        *rem_mem -= size;
+        return;
+    }
+
+    prev = (*list);
+    curr = (*list)->next;
+
+    while (curr != NULL)
+    {
+        if (curr->id == id)
+        {
+            printf("\nDuplicate id found\n");
+            return;
+        }
+
+
+        if ((curr->start_addr - prev->end_addr) >= size)
+        {
+            if (flag){
+                flag = 0;
+                bf_size = (curr->start_addr - prev->end_addr);
+                bf_prev = prev;
+                bf = curr;
+            } 
+
+            cmp_size = (curr->start_addr - prev->end_addr);
+            cmp_prev = prev;
+            cmp = curr;
+        }
+
+        if (cmp_size < bf_size){
+            bf_size = cmp_size;
+            bf_prev = cmp_prev;
+            bf = cmp;
+        }
+
+        if (curr->next == NULL & flag == 1)
+        {
+            bloc->start_addr = curr->end_addr+1;
+            bloc->end_addr = bloc->start_addr + size-1;
+            bloc->next = NULL;
+            curr->next = bloc;
+            *rem_mem -= size;
+            return;
+        }
+        
+        
+        curr = curr->next;
+        prev = prev->next;
+    }
+    
+    if (!flag)
+    {
+        bloc->start_addr = bf_prev->end_addr + 1;
+        bloc->end_addr = bloc->start_addr + (size-1);
+        prev->next = bloc;
+        bloc->next = curr;
+        *rem_mem -= size;
+        return;
+    }
+
+    printf("\nNo hole found");
+    
+    
+    
 }
 
 void dealloc(MEM_BLOC **list, int *rem_mem){
