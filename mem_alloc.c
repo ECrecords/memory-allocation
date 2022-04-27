@@ -16,9 +16,9 @@ void init_mem(MEM_BLOC **list, int *rem_mem);
 
 void print(MEM_BLOC **list);
 
-void ff_alloc(MEM_BLOC **list, int* mem_depth);
+void ff_alloc(MEM_BLOC **list, int* rem_mem);
 
-void dealloc(MEM_BLOC **list, int *mem_depth);
+void dealloc(MEM_BLOC **list, int *rem_mem);
 
 int main(){
     int option;
@@ -55,7 +55,8 @@ int main(){
         }
         else if (option == 4)
         {
-            /* code */
+            dealloc(&list, &rem_mem);
+            print(&list);
         }
         else if (option == 5)
         {
@@ -80,7 +81,7 @@ void init_mem(MEM_BLOC **list, int *rem_mem){
 
     dummy->id = -1;
     dummy->start_addr = 0;
-    dummy->end_addr = 0;
+    dummy->end_addr = -1;
     dummy->next = NULL;
 
     *list = dummy;
@@ -91,12 +92,17 @@ void print(MEM_BLOC **list){
     printf("\nID\tStart   End\n"
             "-------------------\n");
     
-    MEM_BLOC *ptr = (*list)->next;
+    MEM_BLOC *curr = (*list)->next;
+
+    while (curr != NULL)
+    {
         printf("%2d\t%4d  %4d\n", 
-            ptr->id, 
-            ptr->start_addr, 
-            ptr->end_addr);
-        ptr = (*list)->next;
+            curr->id, 
+            curr->start_addr, 
+            curr->end_addr);
+
+        curr = curr->next;
+    }
 }
 
 void ff_alloc(MEM_BLOC **list, int *rem_mem){
@@ -117,9 +123,10 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
     }
 
     bloc  = (MEM_BLOC*) malloc(sizeof(MEM_BLOC));
+    bloc->id = id;
 
     if ((*list)->next == NULL) {
-        bloc->id = id;
+        
         bloc->start_addr = 0;
         bloc->end_addr = bloc->start_addr + (size-1);
         bloc->next = NULL;
@@ -128,7 +135,7 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
         return;
     }
 
-    curr = (*list)->next;
+    curr = (*list);
 
     while (curr != NULL)
     {
@@ -137,17 +144,52 @@ void ff_alloc(MEM_BLOC **list, int *rem_mem){
             return;
         }
 
-        if ( ((curr->next)->start_addr - curr->end_addr) >= size){
-            bloc->id = id;
-            bloc->start_addr = curr->end_addr + 1;
-            bloc->start_addr = (curr->next->start_addr) - 1;
+        if (curr->next == NULL){
+            bloc->start_addr = curr->end_addr+1;
+            bloc->end_addr = bloc->start_addr + size-1;
             bloc->next = NULL;
+            curr->next = bloc;
+            *rem_mem -= size;
+            return;
+        }
+
+        if ( ((curr->next)->start_addr - curr->end_addr) >= size){
+            bloc->start_addr = curr->end_addr + 1;
+            bloc->end_addr = bloc->start_addr + (size-1);
+            bloc->next = curr->next;
+            curr->next = bloc;
             *rem_mem -= size;
             return;
         }        
 
         curr = curr->next;
     }
-    
+    printf("No gitting hold found");
+}
 
+void dealloc(MEM_BLOC **list, int *rem_mem){
+    int target;
+    MEM_BLOC *prev;
+    MEM_BLOC *curr;
+
+    printf("Enter block id: ");
+    scanf("%d", &target);
+
+    prev = (*list);
+    curr = (*list)->next;
+
+    while (curr->id != target)
+    {
+        prev = prev->next;
+        curr = curr->next;
+    }
+
+    if (curr == NULL){
+        printf("ID not found\n");
+        return;
+    }
+
+    *rem_mem -= (curr->end_addr-curr->start_addr);
+    prev->next = curr->next;
+    free(curr);
 }
